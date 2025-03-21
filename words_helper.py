@@ -46,7 +46,7 @@ def createLoaders(batch_size=128):
     ])
 
     # Create the dataset from the preprocessed "words" folder
-    dataset_root = os.path.normpath(os.path.join('cvl-database-1-1', 'preprocessed_dataset', 'words_padded'))
+    dataset_root = os.path.normpath(os.path.join('cvl-database-1-1', 'preprocessed_dataset', 'words_scaled'))
     dataset = WordsDataset(root=dataset_root, transform=transform)
 
     # Split indices: 70% training, 15% validation, 15% testing.
