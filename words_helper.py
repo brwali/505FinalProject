@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 from torchvision import transforms
+from sklearn.metrics import classification_report
 
 
 class WordsDataset(Dataset):
@@ -103,16 +104,64 @@ def trainNet(model, train_loader, valid_loader, label_dict, epochs=10, lr=1e-3, 
 def evalNet(model, loader, label_dict, device=None):
     device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
     model.eval()
+    
     correct = total = 0
     inv_label = {v: k for k, v in label_dict.items()}
+    
+    num_classes = len(label_dict)
+    true_positive = [0] * num_classes
+    false_positive = [0] * num_classes
+    false_negative = [0] * num_classes
+    
     with torch.no_grad():
         for imgs, labels in loader:
             imgs = imgs.to(device)
-            labels_idx = torch.tensor([inv_label[l] for l in labels], dtype=torch.long, device=device)
+            labels_idx = torch.tensor([inv_label[l] for l in labels if l in inv_label], dtype=torch.long, device=device)
+            
             preds = model(imgs).argmax(dim=1)
-            correct += (preds == labels_idx).sum().item()
-            total += labels_idx.size(0)
-    print(f"Accuracy: {100 * correct/total:.2f}%")
+            
+            for i in range(len(labels_idx)):
+                total += 1
+                pred_label = preds[i].item()
+                true_label = labels_idx[i].item()
+                
+                if pred_label == true_label:
+                    correct += 1
+                    true_positive[true_label] += 1
+                else:
+                    false_positive[pred_label] += 1
+                    false_negative[true_label] += 1
+    
+    # Print accuracy
+    accuracy = 100 * correct / total
+    print(f"Accuracy: {accuracy:.2f}%")
+    
+    # Calculate precision, recall, and F1-score
+    precision_list = []
+    recall_list = []
+    f1_list = []
+    
+    for i in range(num_classes):
+        tp = true_positive[i]
+        fp = false_positive[i]
+        fn = false_negative[i]
+        
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+        
+        precision_list.append(precision)
+        recall_list.append(recall)
+        f1_list.append(f1)
+
+    # Macro average metrics
+    macro_precision = sum(precision_list) / num_classes
+    macro_recall = sum(recall_list) / num_classes
+    macro_f1 = sum(f1_list) / num_classes
+    
+    print(f"Macro Precision: {macro_precision:.4f}")
+    print(f"Macro Recall: {macro_recall:.4f}")
+    print(f"Macro F1-Score: {macro_f1:.4f}")
 
 
 class CursiveGenerator(nn.Module):
