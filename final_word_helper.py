@@ -132,12 +132,12 @@ def create_loaders(batch_size=32):
 #                            Transfer Learning Model                          #
 ###############################################################################
 
-def create_resnet50_model(num_classes=1955, pretrained=True):
+def create_resnet101_model(num_classes=1955, pretrained=True):
     """
-    Creates a ResNet-50 model, replacing the final layer with a new linear 
+    Creates a ResNet-101 model, replacing the final layer with a new linear 
     layer for the specified number of classes.
     """
-    model = models.resnet50(pretrained=pretrained)
+    model = models.resnet101(pretrained=pretrained)
     # Replace the final FC layer
     # The original final layer is model.fc for ResNet
     in_features = model.fc.in_features
